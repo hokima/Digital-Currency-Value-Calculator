@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import './index.css';
-
 
 const CryptoCalculator = () => {
   const [cryptoData, setCryptoData] = useState({});
@@ -155,15 +153,19 @@ const CryptoCalculator = () => {
                   בחר מטבע
                 </option>
                 {Object.keys(cryptoIds).map((crypto) => (
-                  <option key={crypto} value={crypto}>
-                    {crypto}{" "}
+                  <option
+                    key={crypto}
+                    value={crypto}
+                    className="flex items-center"
+                  >
                     {cryptoData[crypto] && (
                       <img
                         src={cryptoData[crypto].logo}
                         alt={crypto}
-                        className="inline-block w-4 h-4 ml-1"
+                        className="inline-block w-4 h-4 mr-2"
                       />
                     )}
+                    {crypto}
                   </option>
                 ))}
               </select>
@@ -192,14 +194,21 @@ const CryptoCalculator = () => {
 
         <div className="bg-gray-900 p-4 rounded-lg shadow-lg">
           <h2 className="text-xl font-bold mb-2 text-center">היסטוריה:</h2>
-          {history.map((entry, index) => (
-            <div key={index} className="mb-4 p-2 border-b border-gray-700">
-              <p className="text-sm mb-2">{entry.date}</p>
-              <table className="w-full">
-                <tbody>
-                  {entry.amounts.map((item, itemIndex) => (
-                    <tr key={itemIndex}>
-                      <td className="flex items-center">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left">תאריך</th>
+                <th className="text-left">מטבעות</th>
+                <th className="text-right">סה"כ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((entry, index) => (
+                <tr key={index} className="border-b border-gray-700">
+                  <td className="py-2">{entry.date}</td>
+                  <td>
+                    {entry.amounts.map((item, itemIndex) => (
+                      <div key={itemIndex} className="flex items-center mb-1">
                         {cryptoData[item.crypto] && (
                           <img
                             src={cryptoData[item.crypto].logo}
@@ -207,18 +216,19 @@ const CryptoCalculator = () => {
                             className="w-4 h-4 mr-2"
                           />
                         )}
-                        {item.crypto}
-                      </td>
-                      <td className="text-right">{item.amount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="text-right mt-2">
-                סה"כ: ${entry.total.USD} / ₪{entry.total.ILS}
-              </p>
-            </div>
-          ))}
+                        <span>
+                          {item.crypto}: {item.amount}
+                        </span>
+                      </div>
+                    ))}
+                  </td>
+                  <td className="text-right">
+                    ${entry.total.USD} / ₪{entry.total.ILS}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
