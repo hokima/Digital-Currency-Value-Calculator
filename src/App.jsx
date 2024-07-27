@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import './App.css';
+import './index.css';
+
 
 const CryptoCalculator = () => {
   const [cryptoData, setCryptoData] = useState({});
-  const [amounts, setAmounts] = useState({});
-  const [selectedCryptos, setSelectedCryptos] = useState([]);
+  const [amounts, setAmounts] = useState([{ amount: "", crypto: "" }]);
   const [totalValue, setTotalValue] = useState({ USD: 0, ILS: 0 });
+  const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -16,6 +17,11 @@ const CryptoCalculator = () => {
     MATIC: "matic-network",
     FIT: "fitfi",
     DOT: "polkadot",
+    ADA: "cardano",
+    XRP: "ripple",
+    DOGE: "dogecoin",
+    LINK: "chainlink",
+    UNI: "uniswap",
   };
 
   useEffect(() => {
@@ -55,28 +61,49 @@ const CryptoCalculator = () => {
 
   useEffect(() => {
     calculateTotal();
-  }, [amounts, selectedCryptos, cryptoData]);
+  }, [amounts, cryptoData]);
 
-  const handleAmountChange = (crypto, value) => {
-    setAmounts((prev) => ({ ...prev, [crypto]: value }));
-    if (value && !selectedCryptos.includes(crypto)) {
-      setSelectedCryptos((prev) => [...prev, crypto]);
-    } else if (!value && selectedCryptos.includes(crypto)) {
-      setSelectedCryptos((prev) => prev.filter((c) => c !== crypto));
-    }
+  const handleAmountChange = (index, value) => {
+    const newAmounts = [...amounts];
+    newAmounts[index].amount = value;
+    setAmounts(newAmounts);
+  };
+
+  const handleCryptoChange = (index, value) => {
+    const newAmounts = [...amounts];
+    newAmounts[index].crypto = value;
+    setAmounts(newAmounts);
+  };
+
+  const addNewCryptoInput = () => {
+    setAmounts([...amounts, { amount: "", crypto: "" }]);
+  };
+
+  const removeCryptoInput = (index) => {
+    const newAmounts = amounts.filter((_, i) => i !== index);
+    setAmounts(newAmounts);
   };
 
   const calculateTotal = () => {
     let totalUSD = 0;
-    selectedCryptos.forEach((crypto) => {
-      if (amounts[crypto] && cryptoData[crypto]) {
-        totalUSD += parseFloat(amounts[crypto]) * cryptoData[crypto].price;
+    amounts.forEach(({ amount, crypto }) => {
+      if (amount && crypto && cryptoData[crypto]) {
+        totalUSD += parseFloat(amount) * cryptoData[crypto].price;
       }
     });
     setTotalValue({
       USD: totalUSD.toFixed(2),
       ILS: (totalUSD * 3.5).toFixed(2), // שער המרה משוער לשקל
     });
+  };
+
+  const saveToHistory = () => {
+    const newEntry = {
+      date: new Date().toLocaleString(),
+      amounts: [...amounts],
+      total: { ...totalValue },
+    };
+    setHistory([newEntry, ...history]);
   };
 
   if (isLoading) {
@@ -110,43 +137,88 @@ const CryptoCalculator = () => {
         </div>
 
         <div className="bg-gray-900 p-8 rounded-lg shadow-lg mb-4">
-          <div className="grid grid-cols-2 gap-4">
-            {Object.keys(cryptoIds).map((crypto) => (
-              <div key={crypto} className="flex flex-col items-center mb-4">
-                <div className="flex items-center mb-2">
-                  {cryptoData[crypto] && (
-                    <img
-                      src={cryptoData[crypto].logo}
-                      alt={`${crypto} logo`}
-                      className="w-4 h-4 mr-2"
-                    />
-                  )}
-                  <span className="text-center">{crypto}</span>
-                </div>
-                <input
-                  type="number"
-                  value={amounts[crypto] || ""}
-                  onChange={(e) => handleAmountChange(crypto, e.target.value)}
-                  placeholder={`כמות ${crypto}`}
-                  className="w-full p-2 bg-gray-800 text-yellow-400 rounded text-center"
-                />
-              </div>
-            ))}
-          </div>
+          {amounts.map((item, index) => (
+            <div key={index} className="flex items-center mb-4">
+              <input
+                type="number"
+                value={item.amount}
+                onChange={(e) => handleAmountChange(index, e.target.value)}
+                placeholder="כמות"
+                className="w-1/2 p-2 bg-gray-800 text-yellow-400 rounded text-center mr-2"
+              />
+              <select
+                className="w-1/2 p-2 bg-gray-800 text-yellow-400 rounded"
+                onChange={(e) => handleCryptoChange(index, e.target.value)}
+                value={item.crypto}
+              >
+                <option value="" disabled>
+                  בחר מטבע
+                </option>
+                {Object.keys(cryptoIds).map((crypto) => (
+                  <option key={crypto} value={crypto}>
+                    {crypto}{" "}
+                    {cryptoData[crypto] && (
+                      <img
+                        src={cryptoData[crypto].logo}
+                        alt={crypto}
+                        className="inline-block w-4 h-4 ml-1"
+                      />
+                    )}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => removeCryptoInput(index)}
+                className="ml-2 text-red-500"
+              >
+                X
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={addNewCryptoInput}
+            className="w-full p-2 bg-yellow-400 text-black rounded hover:bg-yellow-300 mb-4"
+          >
+            הוסף מטבע
+          </button>
         </div>
 
+        <button
+          onClick={saveToHistory}
+          className="w-full p-2 bg-yellow-400 text-black rounded hover:bg-yellow-300 mb-4"
+        >
+          שמור להיסטוריה
+        </button>
+
         <div className="bg-gray-900 p-4 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold mb-2 text-center">מטבעות שנבחרו:</h2>
-          <div className="flex justify-center flex-wrap">
-            {selectedCryptos.map((crypto) => (
-              <img
-                key={crypto}
-                src={cryptoData[crypto].logo}
-                alt={`${crypto} logo`}
-                className="w-4 h-4 m-1"
-              />
-            ))}
-          </div>
+          <h2 className="text-xl font-bold mb-2 text-center">היסטוריה:</h2>
+          {history.map((entry, index) => (
+            <div key={index} className="mb-4 p-2 border-b border-gray-700">
+              <p className="text-sm mb-2">{entry.date}</p>
+              <table className="w-full">
+                <tbody>
+                  {entry.amounts.map((item, itemIndex) => (
+                    <tr key={itemIndex}>
+                      <td className="flex items-center">
+                        {cryptoData[item.crypto] && (
+                          <img
+                            src={cryptoData[item.crypto].logo}
+                            alt={item.crypto}
+                            className="w-4 h-4 mr-2"
+                          />
+                        )}
+                        {item.crypto}
+                      </td>
+                      <td className="text-right">{item.amount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-right mt-2">
+                סה"כ: ${entry.total.USD} / ₪{entry.total.ILS}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

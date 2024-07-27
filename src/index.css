@@ -1,0 +1,14 @@
+body {
+  background-color: black;
+  color: #fbbf24;  /* זהו צבע זהב בהיר */
+}
+
+input, select, button {
+  color: #fbbf24;
+  background-color: #1f2937;  /* זהו צבע אפור כהה */
+}
+
+button:hover {
+  background-color: #fbbf24;
+  color: black;
+}
