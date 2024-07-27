@@ -8,6 +8,7 @@ const CryptoCalculator = () => {
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [customCrypto, setCustomCrypto] = useState("");
 
   const cryptoIds = {
     BTC: "bitcoin",
@@ -77,6 +78,24 @@ const CryptoCalculator = () => {
     setAmounts([...amounts, { amount: "", crypto: "" }]);
   };
 
+  const addCustomCrypto = () => {
+    if (customCrypto && !cryptoData[customCrypto]) {
+      setCryptoData((prev) => ({
+        ...prev,
+        [customCrypto]: { price: 0, logo: "https://via.placeholder.com/32" },
+      }));
+      setCustomCrypto("");
+    }
+  };
+
+  const addAllCryptos = () => {
+    const allCryptos = Object.keys(cryptoIds).map((crypto) => ({
+      amount: "",
+      crypto,
+    }));
+    setAmounts(allCryptos);
+  };
+
   const removeCryptoInput = (index) => {
     const newAmounts = amounts.filter((_, i) => i !== index);
     setAmounts(newAmounts);
@@ -144,6 +163,7 @@ const CryptoCalculator = () => {
                 placeholder="כמות"
                 className="w-1/2 p-2 bg-gray-800 text-yellow-400 rounded text-center mr-2"
               />
+              {/* החלף את ה-select הקיים עם זה */}
               <select
                 className="w-1/2 p-2 bg-gray-800 text-yellow-400 rounded"
                 onChange={(e) => handleCryptoChange(index, e.target.value)}
@@ -152,19 +172,8 @@ const CryptoCalculator = () => {
                 <option value="" disabled>
                   בחר מטבע
                 </option>
-                {Object.keys(cryptoIds).map((crypto) => (
-                  <option
-                    key={crypto}
-                    value={crypto}
-                    className="flex items-center"
-                  >
-                    {cryptoData[crypto] && (
-                      <img
-                        src={cryptoData[crypto].logo}
-                        alt={crypto}
-                        className="inline-block w-4 h-4 mr-2"
-                      />
-                    )}
+                {Object.keys(cryptoData).map((crypto) => (
+                  <option key={crypto} value={crypto}>
                     {crypto}
                   </option>
                 ))}
@@ -177,14 +186,24 @@ const CryptoCalculator = () => {
               </button>
             </div>
           ))}
-          <button
-            onClick={addNewCryptoInput}
-            className="w-full p-2 bg-yellow-400 text-black rounded hover:bg-yellow-300 mb-4"
-          >
-            הוסף מטבע
-          </button>
+          {/* החלף את הקוד הקיים של הכפתורים עם זה */}
+          <div className="flex justify-between mt-4">
+            <button
+              onClick={addNewCryptoInput}
+              className="w-1/2 p-2 bg-yellow-400 text-black rounded hover:bg-yellow-500 
+                transition-colors duration-300 mr-2"
+            >
+              הוסף מטבע
+            </button>
+            <button
+              onClick={addAllCryptos}
+              className="w-1/2 p-2 bg-yellow-400 text-black rounded hover:bg-yellow-500 
+                transition-colors duration-300"
+            >
+              הוסף את כל המטבעות
+            </button>
+          </div>
         </div>
-
         <button
           onClick={saveToHistory}
           className="w-full p-2 bg-yellow-400 text-black rounded hover:bg-yellow-300 mb-4"
