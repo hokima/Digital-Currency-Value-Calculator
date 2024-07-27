@@ -29,19 +29,12 @@ const CryptoCalculator = () => {
       setError(null);
       try {
         const response = await axios.get(
-          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${Object.values(cryptoIds).join(",")}&order=market_cap_desc&per_page=100&page=1&sparkline=false`,
-          {
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-            },
-          },
+          "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false",
         );
         const newCryptoData = {};
         response.data.forEach((coin) => {
-          const symbol = Object.keys(cryptoIds).find(
-            (key) => cryptoIds[key] === coin.id,
-          );
-          newCryptoData[symbol] = {
+          newCryptoData[coin.symbol.toUpperCase()] = {
+            name: coin.name,
             price: coin.current_price,
             logo: coin.image,
           };
@@ -172,9 +165,18 @@ const CryptoCalculator = () => {
                 <option value="" disabled>
                   בחר מטבע
                 </option>
-                {Object.keys(cryptoData).map((crypto) => (
-                  <option key={crypto} value={crypto}>
-                    {crypto}
+                {Object.entries(cryptoData).map(([symbol, data]) => (
+                  <option
+                    key={symbol}
+                    value={symbol}
+                    className="flex items-center"
+                  >
+                    <img
+                      src={data.logo}
+                      alt={symbol}
+                      className="w-4 h-4 mr-2"
+                    />
+                    {data.name} ({symbol})
                   </option>
                 ))}
               </select>
