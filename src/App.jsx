@@ -39,7 +39,13 @@ const CryptoCalculator = () => {
             logo: coin.image,
           };
         });
-        setCryptoData(newCryptoData);
+        // מיון המטבעות לפי A-Z
+        const sortedCryptoData = Object.fromEntries(
+          Object.entries(newCryptoData).sort((a, b) =>
+            a[0].localeCompare(b[0]),
+          ),
+        );
+        setCryptoData(sortedCryptoData);
         setIsLoading(false);
       } catch (error) {
         console.error("שגיאה בטעינת נתוני המטבעות:", error);
@@ -138,7 +144,9 @@ const CryptoCalculator = () => {
         <h1 className="text-3xl font-bold mb-6 text-center">
           מחשבון מטבעות דיגיטליים
         </h1>
-
+        <p className="text-sm text-center mb-4 text-red-500">
+          אזהרה: זו אינה המלצת השקעה או ייעוץ פיננסי מכל סוג שהוא.
+        </p>
         <div className="sticky top-0 bg-gray-900 p-4 rounded-lg shadow-lg mb-4">
           <h2 className="text-xl font-bold mb-2 text-center">סך הכל:</h2>
           <p className="text-center">
@@ -251,6 +259,10 @@ const CryptoCalculator = () => {
             </tbody>
           </table>
         </div>
+        {/* הדיסקליימר התחתון - הוסף את זה */}
+        <p className="text-sm text-center mt-4 text-red-500">
+          אזהרה: זו אינה המלצת השקעה או ייעוץ פיננסי מכל סוג שהוא.
+        </p>
       </div>
     </div>
   );
