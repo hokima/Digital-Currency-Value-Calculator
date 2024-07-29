@@ -8,7 +8,8 @@ const CryptoCalculator = () => {
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [customCrypto, setCustomCrypto] = useState("");
+  const [exchangeRate, setExchangeRate] = useState(3.5);
+  // const [customCrypto, setCustomCrypto] = useState("")
 
   const cryptoIds = {
     BTC: "bitcoin",
@@ -28,6 +29,7 @@ const CryptoCalculator = () => {
       setIsLoading(true);
       setError(null);
       try {
+        await fetchExchangeRate();
         const response = await axios.get(
           "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false",
         );
@@ -100,6 +102,18 @@ const CryptoCalculator = () => {
     setAmounts(newAmounts);
   };
 
+  const fetchExchangeRate = async () => {
+    try {
+      const response = await axios.get(
+        "https://api.exchangerate-api.com/v4/latest/USD",
+      );
+      const rate = response.data.rates.ILS;
+      setExchangeRate(rate);
+    } catch (error) {
+      console.error("שגיאה בטעינת שער החליפין:", error);
+    }
+  };
+
   const calculateTotal = () => {
     let totalUSD = 0;
     amounts.forEach(({ amount, crypto }) => {
@@ -109,7 +123,7 @@ const CryptoCalculator = () => {
     });
     setTotalValue({
       USD: totalUSD.toFixed(2),
-      ILS: (totalUSD * 3.5).toFixed(2), // שער המרה משוער לשקל
+      ILS: (totalUSD * exchangeRate).toFixed(2), // שימוש בשער החליפין העדכני
     });
   };
 
@@ -118,8 +132,9 @@ const CryptoCalculator = () => {
       date: new Date().toLocaleString(),
       amounts: [...amounts],
       total: { ...totalValue },
+      exchangeRate: exchangeRate,
     };
-    setHistory([newEntry, ...history]);
+    setHistory((prevHistory) => [newEntry, ...prevHistory]);
   };
 
   if (isLoading) {
@@ -151,6 +166,9 @@ const CryptoCalculator = () => {
           <h2 className="text-xl font-bold mb-2 text-center">סך הכל:</h2>
           <p className="text-center">
             ${totalValue.USD} / ₪{totalValue.ILS}
+          </p>
+          <p className="text-sm text-center mt-2">
+            שער חליפין נוכחי: $1 = ₪{exchangeRate.toFixed(2)}
           </p>
         </div>
 
@@ -223,41 +241,29 @@ const CryptoCalculator = () => {
 
         <div className="bg-gray-900 p-4 rounded-lg shadow-lg">
           <h2 className="text-xl font-bold mb-2 text-center">היסטוריה:</h2>
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="text-left">תאריך</th>
-                <th className="text-left">מטבעות</th>
-                <th className="text-right">סה"כ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((entry, index) => (
-                <tr key={index} className="border-b border-gray-700">
-                  <td className="py-2">{entry.date}</td>
-                  <td>
-                    {entry.amounts.map((item, itemIndex) => (
-                      <div key={itemIndex} className="flex items-center mb-1">
-                        {cryptoData[item.crypto] && (
-                          <img
-                            src={cryptoData[item.crypto].logo}
-                            alt={item.crypto}
-                            className="w-4 h-4 mr-2"
-                          />
-                        )}
-                        <span>
-                          {item.crypto}: {item.amount}
-                        </span>
-                      </div>
-                    ))}
-                  </td>
-                  <td className="text-right">
-                    ${entry.total.USD} / ₪{entry.total.ILS}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {history.map((entry, index) => (
+            <div key={index} className="mb-4 p-2 border-b border-gray-700">
+              <p className="text-sm">{entry.date}</p>
+              <div className="flex flex-wrap">
+                {entry.amounts.map((item, itemIndex) => (
+                  item.amount && (
+                    <span key={itemIndex} className="mr-2 mb-1">
+                      {cryptoData[item.crypto] && (
+                        <img
+                          src={cryptoData[item.crypto].logo}
+                          alt={item.crypto}
+                          className="w-4 h-4 inline mr-1"
+                        />
+                      )}
+                      {item.crypto}: {item.amount}
+                    </span>
+                  )
+                ))}
+              </div>
+              <p>סה"כ: ${entry.total.USD} / ₪{entry.total.ILS}</p>
+              <p className="text-xs">שער חליפין: $1 = ₪{entry.exchangeRate.toFixed(2)}</p>
+            </div>
+          ))}
         </div>
         {/* הדיסקליימר התחתון - הוסף את זה */}
         <p className="text-sm text-center mt-4 text-red-500">
