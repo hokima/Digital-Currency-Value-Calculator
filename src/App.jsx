@@ -9,6 +9,7 @@ const CryptoCalculator = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [exchangeRate, setExchangeRate] = useState(3.5);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
   // const [customCrypto, setCustomCrypto] = useState("")
 
   const cryptoIds = {
@@ -41,13 +42,13 @@ const CryptoCalculator = () => {
             logo: coin.image,
           };
         });
-        // מיון המטבעות לפי A-Z
         const sortedCryptoData = Object.fromEntries(
           Object.entries(newCryptoData).sort((a, b) =>
             a[0].localeCompare(b[0]),
           ),
         );
         setCryptoData(sortedCryptoData);
+        setLastUpdated(new Date());
         setIsLoading(false);
       } catch (error) {
         console.error("שגיאה בטעינת נתוני המטבעות:", error);
@@ -57,11 +58,17 @@ const CryptoCalculator = () => {
     };
 
     fetchCryptoData();
+
+    // עדכון כל 60 שניות
+    const interval = setInterval(fetchCryptoData, 60000);
+
+    // ניקוי ה-interval כשהקומפוננטה מתפרקת
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     calculateTotal();
-  }, [amounts, cryptoData]);
+  }, [amounts, cryptoData, exchangeRate]);
 
   const handleAmountChange = (index, value) => {
     const newAmounts = [...amounts];
@@ -123,7 +130,7 @@ const CryptoCalculator = () => {
     });
     setTotalValue({
       USD: totalUSD.toFixed(2),
-      ILS: (totalUSD * exchangeRate).toFixed(2), // שימוש בשער החליפין העדכני
+      ILS: (totalUSD * exchangeRate).toFixed(2),
     });
   };
 
@@ -170,6 +177,9 @@ const CryptoCalculator = () => {
           <p className="text-sm text-center mt-2">
             שער חליפין נוכחי: $1 = ₪{exchangeRate.toFixed(2)}
           </p>
+          <p className="text-sm text-center mt-2">
+            עודכן לאחרונה: {lastUpdated.toLocaleString()}
+          </p>
         </div>
 
         <div className="bg-gray-900 p-8 rounded-lg shadow-lg mb-4">
@@ -197,12 +207,7 @@ const CryptoCalculator = () => {
                     value={symbol}
                     className="flex items-center"
                   >
-                    <img
-                      src={data.logo}
-                      alt={symbol}
-                      className="w-4 h-4 mr-2"
-                    />
-                    {data.name} ({symbol})
+                    {data.name} ({symbol}) - ${data.price.toFixed(2)}
                   </option>
                 ))}
               </select>
@@ -245,23 +250,28 @@ const CryptoCalculator = () => {
             <div key={index} className="mb-4 p-2 border-b border-gray-700">
               <p className="text-sm">{entry.date}</p>
               <div className="flex flex-wrap">
-                {entry.amounts.map((item, itemIndex) => (
-                  item.amount && (
-                    <span key={itemIndex} className="mr-2 mb-1">
-                      {cryptoData[item.crypto] && (
-                        <img
-                          src={cryptoData[item.crypto].logo}
-                          alt={item.crypto}
-                          className="w-4 h-4 inline mr-1"
-                        />
-                      )}
-                      {item.crypto}: {item.amount}
-                    </span>
-                  )
-                ))}
+                {entry.amounts.map(
+                  (item, itemIndex) =>
+                    item.amount && (
+                      <span key={itemIndex} className="mr-2 mb-1">
+                        {cryptoData[item.crypto] && (
+                          <img
+                            src={cryptoData[item.crypto].logo}
+                            alt={item.crypto}
+                            className="w-4 h-4 inline mr-1"
+                          />
+                        )}
+                        {item.crypto}: {item.amount}
+                      </span>
+                    ),
+                )}
               </div>
-              <p>סה"כ: ${entry.total.USD} / ₪{entry.total.ILS}</p>
-              <p className="text-xs">שער חליפין: $1 = ₪{entry.exchangeRate.toFixed(2)}</p>
+              <p>
+                סה"כ: ${entry.total.USD} / ₪{entry.total.ILS}
+              </p>
+              <p className="text-xs">
+                שער חליפין: $1 = ₪{entry.exchangeRate.toFixed(2)}
+              </p>
             </div>
           ))}
         </div>
