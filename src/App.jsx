@@ -4,12 +4,16 @@ import axios from "axios";
 const CryptoCalculator = () => {
   const [cryptoData, setCryptoData] = useState({});
   const [amounts, setAmounts] = useState([{ amount: "", crypto: "" }]);
-  const [totalValue, setTotalValue] = useState({ USD: 0, ILS: 0 });
+  const [totalValue, setTotalValue] = useState({ USD: 0, ILS: 0, BTC: 0 });
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [exchangeRate, setExchangeRate] = useState(3.5);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [selectedCrypto, setSelectedCrypto] = useState('');
+  const [dollarAmount, setDollarAmount] = useState('');
+  const [cryptoAmount, setCryptoAmount] = useState('');
+  const [btcEquivalent, setBtcEquivalent] = useState('');
   // const [customCrypto, setCustomCrypto] = useState("")
 
   const cryptoIds = {
@@ -70,6 +74,10 @@ const CryptoCalculator = () => {
     calculateTotal();
   }, [amounts, cryptoData, exchangeRate]);
 
+  useEffect(() => {
+    calculateCryptoAndBtc();
+  }, [selectedCrypto, dollarAmount, cryptoData]);
+
   const handleAmountChange = (index, value) => {
     const newAmounts = [...amounts];
     newAmounts[index].amount = value;
@@ -82,6 +90,19 @@ const CryptoCalculator = () => {
     setAmounts(newAmounts);
   };
 
+  const calculateCryptoAndBtc = () => {
+    if (selectedCrypto && dollarAmount && cryptoData[selectedCrypto] && cryptoData['BTC']) {
+      const amount = parseFloat(dollarAmount) / cryptoData[selectedCrypto].price;
+      setCryptoAmount(amount.toFixed(8));
+
+      const btcValue = parseFloat(dollarAmount) / cryptoData['BTC'].price;
+      setBtcEquivalent(btcValue.toFixed(8));
+    } else {
+      setCryptoAmount('');
+      setBtcEquivalent('');
+    }
+  };
+  
   const addNewCryptoInput = () => {
     setAmounts([...amounts, { amount: "", crypto: "" }]);
   };
@@ -123,14 +144,21 @@ const CryptoCalculator = () => {
 
   const calculateTotal = () => {
     let totalUSD = 0;
+    let totalBTC = 0;
+    const btcPrice = cryptoData.BTC?.price || 1; // מחיר ביטקוין, אם אין מחיר נשתמש ב-1
+
     amounts.forEach(({ amount, crypto }) => {
       if (amount && crypto && cryptoData[crypto]) {
-        totalUSD += parseFloat(amount) * cryptoData[crypto].price;
+        const valueUSD = parseFloat(amount) * cryptoData[crypto].price;
+        totalUSD += valueUSD;
+        totalBTC += valueUSD / btcPrice; // מחשבים כמה זה שווה בביטקוין
       }
     });
+
     setTotalValue({
       USD: totalUSD.toFixed(2),
       ILS: (totalUSD * exchangeRate).toFixed(2),
+      BTC: totalBTC.toFixed(8) // ביטקוין עד 8 ספרות אחרי הנקודה
     });
   };
 
@@ -172,13 +200,10 @@ const CryptoCalculator = () => {
         <div className="sticky top-0 bg-gray-900 p-4 rounded-lg shadow-lg mb-4">
           <h2 className="text-xl font-bold mb-2 text-center">סך הכל:</h2>
           <p className="text-center">
-            ${totalValue.USD} / ₪{totalValue.ILS}
+            ${totalValue.USD} / ₪{totalValue.ILS} / ₿{totalValue.BTC}
           </p>
           <p className="text-sm text-center mt-2">
             שער חליפין נוכחי: $1 = ₪{exchangeRate.toFixed(2)}
-          </p>
-          <p className="text-sm text-center mt-2">
-            עודכן לאחרונה: {lastUpdated.toLocaleString()}
           </p>
         </div>
 
@@ -244,6 +269,35 @@ const CryptoCalculator = () => {
           שמור להיסטוריה
         </button>
 
+        <div className="bg-gray-900 p-4 rounded-lg shadow-lg mb-4">
+          <h3 className="text-lg font-bold mb-2">מחשבון קנייה</h3>
+          <select
+            value={selectedCrypto}
+            onChange={(e) => setSelectedCrypto(e.target.value)}
+            className="w-full p-2 mb-2 bg-gray-800 text-yellow-400 rounded"
+          >
+            <option value="">בחר מטבע קריפטו</option>
+            {Object.keys(cryptoData).filter(crypto => crypto !== 'BTC').map((crypto) => (
+              <option key={crypto} value={crypto}>
+                {crypto}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            value={dollarAmount}
+            onChange={(e) => setDollarAmount(e.target.value)}
+            placeholder="הכנס סכום בדולרים"
+            className="w-full p-2 mb-2 bg-gray-800 text-yellow-400 rounded"
+          />
+          {cryptoAmount && btcEquivalent && (
+            <div className="text-center">
+              <p>תקבל: {cryptoAmount} {selectedCrypto}</p>
+              <p>שווה ערך ל-: ₿{btcEquivalent} ביטקוין</p>
+            </div>
+          )}
+        </div>
+        
         <div className="bg-gray-900 p-4 rounded-lg shadow-lg">
           <h2 className="text-xl font-bold mb-2 text-center">היסטוריה:</h2>
           {history.map((entry, index) => (
